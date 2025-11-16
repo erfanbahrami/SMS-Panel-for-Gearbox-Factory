@@ -24,11 +24,15 @@ def check_sms_inbox() -> None:
     db = next(iter(db))
 
     try:
+        # line number is wrong it is a special number that assigned for you annd can see in panel
         response = sms_api.get_received_smses(ghasedak_sms.GetReceivedSmsInput(line_number='30005088', is_read=False))
 
         for sms in response.items:
             receivedNumber = extract_serial(sms.message)
             if receivedNumber:
+                # if below query not be null, serial is fake?
+                # validity_check = db.query(models.GearboxInformation).filter(models.GearboxInformation.serial == receivedNumber).first()
+                # if validity_check :
                 if  ### to database check kone in to gerabox_information hast ya na:
                     if ### age to jadvale gerabox_information bood, bere tu guarantee_information check kone hast ya na ya na
                         if    ### age nabood
@@ -47,6 +51,10 @@ def check_sms_inbox() -> None:
                            ### sms ro ezafe kone be jadvale sms_outbox ba flag false    
             else:
                 # Invalid SMS
+                # sample add to db by related objecy
+                # db.add(models.SMSInbox(flag= "kososher", message_body= "", mobile_number=""))
+                # below command required for commit and better to be inside a try catch
+                # db.commit()
                 ### bechepon to database jadvale sms_inbox ba flag kossher
                 ### send sms kone be karbar bege kossher vared nakon haroooooom zade
                 ### sms ro ezafe kone be jadvale sms_outbox ba flag kossher
