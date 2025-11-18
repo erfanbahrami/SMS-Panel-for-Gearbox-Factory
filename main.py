@@ -33,7 +33,7 @@ def check_sms_inbox() -> None:
     db_gen = get_db()
     db = next(iter(db_gen))
     try:
-        responses = sms_api.get_received_smses(ghasedak_sms.GetReceivedSmsInput(line_number='????????', is_read=False))
+        responses = sms_api.get_received_smses(ghasedak_sms.GetReceivedSmsInput(line_number='3000794925', is_read=False))
 
         for response in responses.items:
             received_number_from_customer = extract_received_number_from_customer(response.message)
