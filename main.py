@@ -10,14 +10,17 @@ import threading
 import time
 import re
 import mehrdad
+import asyncio
+import random
+import signal
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
+from scheduler import Scheduler
 
 models.Base.metadata.create_all(bind=engine)
 
 sms_api = ghasedak_sms.Ghasedak(api_key="2ac92e310b07b033a2f49a15037420332367ecfb8463c88644726d03b6955f5buoNsGTcfHK9a4RNJ")
 
-app = FastAPI()
-
-BackgroundTasks.add_task()
 
 
 def extract_received_number_from_customer(message: str):
@@ -41,12 +44,12 @@ def check_sms_inbox() -> None:
                 gearbox_check = db.query(models.GearboxInformation).filter(models.GearboxInformation.serial==received_number_from_customer).first()
                 if gearbox_check:
                     if gearbox_check.guarantee is None:
+                        db.add(models.SMSInbox(flag='true', message_body=response.message, sender_mobile_number=response.sender, received_time_and_date=response.receiveDate))
+
                         db.add(models.GuaranteeInformation(serial=gearbox_check.serial, activeDateTime=response.receiveDate, expireDateTime=response.receiveDate + relativedelta(months=12)))
                         db.commit()
                         db.refresh(gearbox_check)
-                        
-                        db.add(models.SMSInbox(flag='true', message_body=response.message, sender_mobile_number=response.sender, received_time_and_date=response.receiveDate))
-                        
+
                         type_value=gearbox_check.type
                         size_value=gearbox_check.size
                         ratio_value=gearbox_check.ratio
@@ -105,12 +108,17 @@ def check_sms_inbox() -> None:
             pass
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    Scheduler.start_scheduler()
+    Scheduler.schedule.cyclic(datetime.timedelta(seconds=60), check_sms_inbox)
+    yield
 
-@app.get("/")
-def home():
-    return {"message": "SMS receiver service is running."}
 
-
+app = FastAPI(
+    title="SMS Panel",
+    lifespan=lifespan,
+)
 
 
 
