@@ -6,7 +6,7 @@ from urllib.parse import quote_plus
 DATABASE_USERNAME = "postgres"
 DATABASE_PASSWORD = "Aa@123456"    
 DATABASE_HOSTNAME = "localhost"
-DATABASE_NAME = "mehrdad"
+DATABASE_NAME = "mehrdad2"
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOSTNAME}/{DATABASE_NAME}"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
