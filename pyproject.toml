@@ -5,7 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "dotenv>=0.9.9",
     "fastapi>=0.121.2",
+    "ghasedak-sms>=1.0.3",
+    "psycopg2>=2.9.11",
+    "python-dateutil>=2.9.0.post0",
     "scheduler>=0.8.8",
+    "sqlalchemy>=2.0.44",
     "uvicorn>=0.38.0",
 ]

@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from database import get_db, SessionLocal, engine
 import models
 import ghasedak_sms
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import ghasedak_sms
 import threading
 import time
 import re
-import mehrdad
+import OTP_functions
 import asyncio
 import random
 import signal
@@ -17,10 +17,9 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 from scheduler import Scheduler
 
-models.Base.metadata.create_all(bind=engine)
+#models.Base.metadata.create_all(bind=engine)
 
 sms_api = ghasedak_sms.Ghasedak(api_key="2ac92e310b07b033a2f49a15037420332367ecfb8463c88644726d03b6955f5buoNsGTcfHK9a4RNJ")
-
 
 
 def extract_received_number_from_customer(message: str):
@@ -56,7 +55,7 @@ def check_sms_inbox() -> None:
                         activeDateTime_value=gearbox_check.guarantee.activeDateTime
                         expireDateTime_value=gearbox_check.guarantee.expireDateTime
                         mobileNumber_value=response.sender
-                        sent_sms = mehrdad.send_sms_guarantee_activated(type_value, size_value, ratio_value, activeDateTime_value, expireDateTime_value, mobileNumber_value)
+                        sent_sms = OTP_functions.send_sms_guarantee_activated(type_value, size_value, ratio_value, activeDateTime_value, expireDateTime_value, mobileNumber_value)
 
                         db.add(models.SMSOutbox(flag='true', message_body=sent_sms.messageBody , receiptor_mobile_number=sent_sms.receptor, sent_date_and_time=sent_sms.sendDate))
                         db.commit()
@@ -69,7 +68,7 @@ def check_sms_inbox() -> None:
                         activeDateTime_value=gearbox_check.guarantee.activeDateTime
                         expireDateTime_value=gearbox_check.guarantee.expireDateTime
                         mobileNumber_value=response.sender
-                        sent_sms = mehrdad.send_sms_duplicate_serial(serial_value, activeDateTime_value, expireDateTime_value, mobileNumber_value)
+                        sent_sms = OTP_functions.send_sms_duplicate_serial(serial_value, activeDateTime_value, expireDateTime_value, mobileNumber_value)
 
                         db.add(models.SMSOutbox(flag='duplicate', message_body=sent_sms.messageBody , receiptor_mobile_number=sent_sms.receptor, sent_date_and_time=sent_sms.sendDate))
                         db.commit()
@@ -80,7 +79,7 @@ def check_sms_inbox() -> None:
                     
                     receivedNumber_value=received_number_from_customer
                     mobileNumber_value=response.sender
-                    sent_sms = mehrdad.send_sms_invalid_serial(receivedNumber_value, mobileNumber_value)
+                    sent_sms = OTP_functions.send_sms_invalid_serial(receivedNumber_value, mobileNumber_value)
 
                     db.add(models.SMSOutbox(flag='false', message_body=sent_sms.messageBody , receiptor_mobile_number=sent_sms.receptor, sent_date_and_time=sent_sms.sendDate))
                     db.commit()
@@ -91,7 +90,7 @@ def check_sms_inbox() -> None:
                     
                 receivedNumber_value=response.message
                 mobileNumber_value=response.sender
-                sent_sms = mehrdad.send_sms_invalid_serial(receivedNumber_value, mobileNumber_value)
+                sent_sms = OTP_functions.send_sms_invalid_serial(receivedNumber_value, mobileNumber_value)
 
                 db.add(models.SMSOutbox(flag='wrong-format', message_body=sent_sms.messageBody , receiptor_mobile_number=sent_sms.receptor, sent_date_and_time=sent_sms.sendDate))
                 db.commit()
@@ -108,12 +107,21 @@ def check_sms_inbox() -> None:
             pass
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    Scheduler.start_scheduler()
-    Scheduler.schedule.cyclic(datetime.timedelta(seconds=60), check_sms_inbox)
-    yield
+# @asynccontextmanager
+# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+#     Scheduler.start_scheduler()
+#     Scheduler.schedule.cyclic(datetime.timedelta(seconds=60), check_sms_inbox)
+#     yield
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async def background_worker():
+        while True:
+            check_sms_inbox()
+            await asyncio.sleep(60)   # Run every 60 seconds
+
+    asyncio.create_task(background_worker())
+    yield
 
 app = FastAPI(
     title="SMS Panel",
