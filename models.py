@@ -18,8 +18,7 @@ class Employees(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    # 1-to-many: one employee can add many gearboxes
-    gearboxes = relationship("GearboxInformation", back_populates="employee")
+
 
 
 # ============================================================
@@ -37,8 +36,7 @@ class GearboxInformation(Base):
     comments = Column(String(200))
     # One-to-One relationship with GuaranteeInformation
     guarantee = relationship("GuaranteeInformation", back_populates="gearbox",uselist=False)
-    # NEW FIELD: which employee added this gearbox
-    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+
 
 
 # ============================================================
